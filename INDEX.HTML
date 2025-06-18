@@ -42,6 +42,13 @@
       <button class="menu-button admin-only" id="bodega-button">
         <i class="fas fa-warehouse me-2"></i> Bodega
       </button>
+      <!-- NUEVOS: Cuadres y Gráficos de Venta -->
+      <button class="menu-button admin-only" id="cuadres-button">
+        <i class="fas fa-calculator me-2"></i> Cuadres
+      </button>
+      <button class="menu-button admin-only" id="grafico-ventas-button">
+        <i class="fas fa-chart-area me-2"></i> Gráficos de Venta
+      </button>
       <button class="menu-button admin-only" id="reportes-button">
         <i class="fas fa-chart-line me-2"></i> Reportes
       </button>
@@ -99,10 +106,15 @@
 
   <!-- JS embebido: roles + navegación -->
   <script>
-    const welcomeMessage = document.getElementById('welcome-message');
-    const empresaButton  = document.getElementById('empresa-button');
-    const facturasButton = document.getElementById('facturas-button');
-    const logoutButton   = document.getElementById('logout-button');
+    const welcomeMessage        = document.getElementById('welcome-message');
+    const empresaButton         = document.getElementById('empresa-button');
+    const bodegaButton          = document.getElementById('bodega-button');
+    const cuadresButton         = document.getElementById('cuadres-button');
+    const graficoVentasButton   = document.getElementById('grafico-ventas-button');
+    const reportesButton        = document.getElementById('reportes-button');
+    const rrhhButton            = document.getElementById('rrhh-button');
+    const facturasButton        = document.getElementById('facturas-button');
+    const logoutButton          = document.getElementById('logout-button');
 
     /* ------ Control de roles ------ */
     function ajustarMenuSegunRol(rol) {
@@ -111,24 +123,20 @@
       } else if (rol === 'bodega') {
         document.querySelector('.oe_menu').style.display = 'none';
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-
-        const btn = document.getElementById('bodega-button');
-        if (btn) {
-          btn.classList.remove('admin-only');
-          btn.style.display = 'inline-block';
-          btn.textContent = 'Inventario Bodega';
-          btn.onclick = () => window.location.href = 'InventarioBodega/salidas encargado bodega/salidas.html';
-        }
+        // Permitir solo botón de bodega modificado
+        bodegaButton.classList.remove('admin-only');
+        bodegaButton.style.display = 'inline-block';
+        bodegaButton.textContent = 'Inventario Bodega';
+        bodegaButton.onclick = () => window.location.href = 'InventarioBodega/salidas encargado bodega/salidas.html';
       }
     }
 
     function verificarUsuario() {
       const usuario = localStorage.getItem('usuarioLogueado');
-      if (!usuario) return (window.location.href = 'login.html');
-
+      if (!usuario) return window.location.href = 'login.html';
       db.collection('usuarios').where('username', '==', usuario).limit(1).get()
         .then(snap => {
-          if (snap.empty) return (window.location.href = 'login.html');
+          if (snap.empty) return window.location.href = 'login.html';
           const data = snap.docs[0].data();
           ajustarMenuSegunRol(data.rol);
           welcomeMessage.textContent = `Bienvenido, ${data.username}!`;
@@ -136,15 +144,14 @@
         .catch(() => window.location.href = 'login.html');
     }
 
-    function cerrarSesion() {
-      localStorage.removeItem('usuarioLogueado');
-      window.location.href = 'login.html';
-    }
-
-    /* ------ Eventos ------ */
+    /* ------ Eventos de navegación ------ */
+    empresaButton.addEventListener('click',       () => window.location.href = 'empresa/empresaMenu.html');
+    cuadresButton.addEventListener('click',       () => window.location.href = 'reportes/cuadres.html');
+    graficoVentasButton.addEventListener('click', () => window.location.href = 'reportes/graficoVentas.html');
+    reportesButton.addEventListener('click',      () => window.location.href = 'reportes/reportes.html');
+    rrhhButton.addEventListener('click',          () => window.location.href = 'rrhh/rrhh.html');
+    facturasButton.addEventListener('click',      () => window.location.href = 'facturas/facturas.html');
     logoutButton.addEventListener('click', cerrarSesion);
-    empresaButton.addEventListener('click', () => window.location.href = 'empresa/empresaMenu.html');
-    facturasButton.addEventListener('click', () => window.location.href = 'facturas/facturas.html');
     window.onload = verificarUsuario;
 
     /* ------ Sidebar toggler (móvil) ------ */
@@ -152,6 +159,11 @@
       document.querySelector('.sidebar').classList.toggle('nav-hidden');
       document.querySelector('.content').classList.toggle('expanded');
     });
+
+    function cerrarSesion() {
+      localStorage.removeItem('usuarioLogueado');
+      window.location.href = 'login.html';
+    }
   </script>
 
   <!-- Bootstrap bundle -->
