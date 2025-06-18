@@ -1,0 +1,50 @@
+/* Panel izquierdo (escritorio) */
+.left-panel {
+    background: linear-gradient(135deg, #4e5152 0%, #0c0c0b 100%);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+  }
+  
+  /* Logo ampliado al doble de tamaño */
+  .logo-lg {
+    max-width: 600px; /* antes 300px */
+    width: 100%;
+    height: auto;
+  }
+  
+  /* Tarjeta de login */
+  .login-card {
+    max-width: 400px;
+    width: 90%;
+    border: none;
+    border-radius: 8px;
+  }
+  
+  /* Campos de formulario */
+  .input-group-text {
+    background-color: #f7f7f7;
+    border: 1px solid #ced4da;
+  }
+  .form-control:focus,
+  .form-select:focus {
+    box-shadow: none;
+    border-color: #80bdff;
+  }
+  
+  /* Spinner dentro del botón */
+  #login-spinner {
+    margin-right: 8px;
+  }
+  
+  /* Ícono de mostrar/ocultar contraseña */
+  #togglePassword {
+    cursor: pointer;
+  }
+  
+  /* Responsive: mantener bordes redondeados en móvil */
+  @media (max-width: 767.98px) {
+    .login-card {
+      border-radius: 8px;
+    }
+  }
+  

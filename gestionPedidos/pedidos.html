@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Pedidos</title>
+  <link rel="stylesheet" href="pedidos.css" />
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Archivo de conexión a la base de datos -->
+  <script src="../database/connection.js"></script>
+  <!-- Archivo JavaScript de la aplicación -->
+  <script defer src="pedidos.js"></script>
+</head>
+<body>
+  <div class="header">
+    <h1>Gestión de Pedidos</h1>
+    <div id="loggedInUser" style="font-weight: bold; color: #333;"></div>
+    <!-- Botón para volver al menú principal -->
+    <button class="main-menu-button" onclick="goToMainMenu()">Volver al Menú Principal</button>
+    <!-- Nuevo botón para exportar pedidos -->
+    <button class="export-orders-button" onclick="window.location.href='exportPedidos.html'">
+      Exportar Pedidos
+    </button>
+  </div>
+
+  <!-- Filtros para administrador -->
+  <div id="adminFilterContainer" style="display: none; margin: 1rem 0;">
+    <label for="sucursalFilter" style="font-weight: bold;">Filtrar por Sucursal:</label>
+    <select id="sucursalFilter" onchange="reloadOrders()"></select>
+    
+    <label for="providerFilter" style="font-weight: bold; margin-left: 1rem;">Filtrar por Proveedor:</label>
+    <select id="providerFilter" onchange="reloadOrders()"></select>
+    
+    <label for="estadoFilter" style="font-weight: bold; margin-left: 1rem;">Filtrar por Estado:</label>
+    <select id="estadoFilter" onchange="reloadOrders()">
+      <option value="all" selected>Todos</option>
+      <option value="pending">Pendiente</option>
+      <option value="delivery">Entrega en Bodega/Tienda</option>
+    </select>
+    
+    <!-- Filtro adicional: Tipo de Entrega -->
+    <label for="deliveryTypeFilter" style="font-weight: bold; margin-left: 1rem;">Tipo de Entrega:</label>
+    <select id="deliveryTypeFilter" onchange="reloadOrders()">
+      <option value="all" selected>Todos</option>
+      <option value="Tienda">Entrega en Tienda</option>
+      <option value="Bodega">Entrega en Bodega</option>
+    </select>
+    
+    <label for="sortOrder" style="font-weight: bold; margin-left: 1rem;">Ordenar por:</label>
+    <select id="sortOrder" onchange="reloadOrders()">
+      <option value="masReciente" selected>Más Reciente</option>
+      <option value="masAntiguo">Más Antiguo</option>
+    </select>
+    
+    <label for="idSearchInput" style="font-weight: bold; margin-left: 1rem;">Buscar por ID:</label>
+    <input type="text" id="idSearchInput" placeholder="Ej. 123" oninput="reloadOrders()" style="width: 100px;"/>
+    
+    <!-- Filtro por fecha -->
+    <label for="dateSearchInput" style="font-weight: bold; margin-left: 1rem;">Buscar por Fecha:</label>
+    <input type="date" id="dateSearchInput" onchange="reloadOrders()" />
+  </div>
+
+  <!-- Pestañas -->
+  <div class="tab-container" id="tabContainer">
+    <button class="tab-button active" onclick="openTab(event, 'inProcessOrdersContainer')">Pedidos en Proceso</button>
+    <button class="tab-button" onclick="openTab(event, 'completedOrdersContainer')">Pedidos Completados</button>
+  </div>
+
+  <!-- Contenedor Pedidos en Proceso -->
+  <div id="inProcessOrdersContainer" class="container">
+    <h2>Pedidos en Proceso</h2>
+    <div id="inProcessOrdersAdminCards" class="order-cards-container">
+      <!-- Se generan dinámicamente -->
+    </div>
+  </div>
+
+  <!-- Contenedor Pedidos Completados -->
+  <div id="completedOrdersContainer" class="container" style="display: none;">
+    <h2>Pedidos Completados</h2>
+    <div id="completedOrdersAdminCards" class="order-cards-container">
+      <!-- Se generan dinámicamente -->
+    </div>
+  </div>
+
+  <!-- Modal: Detalles del Pedido -->
+  <div id="orderDetailsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeOrderDetailsModal()">&times;</span>
+      <h2>Detalles del Pedido</h2>
+      <div id="orderDetails"></div>
+      <button id="exportOrderImageButton" style="margin-top: 1rem;">Exportar Pedido como Imagen</button>
+      <button onclick="openEditOrderModal(currentOrder)">Editar Pedido</button>
+    </div>
+  </div>
+
+  <!-- Modal: Exportar Pedido -->
+  <div id="exportModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeExportModal()">&times;</span>
+      <h2>Exportar Pedido</h2>
+      <button onclick="exportAs('image')">Descargar como Imagen</button>
+      <button onclick="exportAs('pdf')">Descargar como PDF</button>
+      <button onclick="exportAs('excel')">Descargar como Excel</button>
+    </div>
+  </div>
+
+  <!-- Modal: Editar Pedido -->
+  <div id="editOrderModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeEditOrderModal()">&times;</span>
+      <h2>Editar Pedido</h2>
+      <div id="editOrderDetails">
+        <form id="editOrderForm">
+          <input type="hidden" id="editOrderDocId" />
+          <p><strong>ID Pedido:</strong> <span id="editOrderIdDisplay"></span></p>
+          <p>
+            <strong>Destino:</strong>
+            <select id="editOrderDestination">
+              <option value="Bodega">Bodega</option>
+              <option value="Tienda">Tienda</option>
+            </select>
+          </p>
+          <table id="editOrderProductsTable">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Presentación</th>
+                <th>Cantidad</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="editOrderProducts"></tbody>
+          </table>
+          <button type="button" onclick="addProductRow()">Agregar Producto</button>
+          <br/><br/>
+          <button type="button" onclick="saveEditedOrder()">Guardar Cambios</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmar Recepción -->
+  <div id="confirmOrderModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeConfirmOrderModal()">&times;</span>
+      <h2>Ingresar Cantidades Recibidas</h2>
+      <input type="hidden" id="confirmOrderId" value=""/>
+      <div id="invoiceDetails">
+        <label for="invoiceNumber"><strong>Número de Factura:</strong></label>
+        <input type="number" id="invoiceNumber" name="invoiceNumber"/><br/><br/>
+        <label for="invoiceDate"><strong>Fecha de Factura:</strong></label>
+        <input type="date" id="invoiceDate" name="invoiceDate"/><br/><br/>
+        <label style="display: inline-flex; align-items: center;">
+          <input type="checkbox" id="noInvoiceCheckbox" style="margin-right: 8px;"/>
+          No se ingresó la factura
+        </label>
+        <br/><br/>
+        <label style="display: inline-flex; align-items: center;">
+          <input type="checkbox" id="multipleInvoicesCheckbox" style="margin-right: 8px;"/>
+          Pedido incluye más de una factura
+        </label>
+        <div id="additionalInvoicesContainer" style="display: none; margin-top: 1rem;">
+          <button type="button" onclick="addInvoiceRow()">Agregar Factura Adicional</button>
+          <div id="additionalInvoicesRows"></div>
+        </div>
+      </div>
+      <div id="orderInfo">
+        <p><strong>ID Pedido:</strong> <span id="orderIdDisplay"></span></p>
+        <p><strong>Proveedor:</strong> <span id="providerNameDisplay"></span></p>
+        <p><strong>Sucursal:</strong> <span id="sucursalNameDisplay"></span></p>
+        <p><strong>Fecha de Pedido:</strong> <span id="orderDateDisplay"></span></p>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Presentación</th>
+            <th>Cantidad Pedido</th>
+            <th>Cantidad Recibida</th>
+            <th>Precio (Q)</th>
+            <th>Total (Q)</th>
+            <th>Comentarios</th>
+          </tr>
+        </thead>
+        <tbody id="confirmOrderProducts"></tbody>
+      </table>
+      <div id="invoiceTotalContainer" style="margin-top: 1rem; font-weight: bold;">
+        <p>Total de la Factura: Q<span id="invoiceTotal">0.00</span></p>
+      </div>
+      <div id="exportReceptionButtonContainer" style="margin-top: 1rem; display: none;">
+        <button onclick="exportAsReceivedOrderImage(document.getElementById('confirmOrderId').value)">Exportar Cantidades Recibidas</button>
+      </div>
+      <button onclick="saveConfirmedOrder()">Guardar Recepción</button>
+    </div>
+  </div>
+
+  <!-- Modal: Mostrar Pedido Recibido -->
+  <div id="receivedOrderModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeReceivedOrderModal()">&times;</span>
+      <h2>Detalles del Pedido Recibido</h2>
+      <div id="receivedOrderDetails"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Cambiar Estado del Pedido -->
+  <div id="changeStatusModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeChangeStatusModal()">&times;</span>
+      <h2>Cambiar Estado del Pedido</h2>
+      <p>Selecciona el nuevo estado para este pedido:</p>
+      <button onclick="changeOrderStatusManually('pending')">Pendiente</button>
+      <button onclick="changeOrderStatusManually('pedidoTomado')">Pedido Tomado</button>
+      <button onclick="changeOrderStatusManually('pedidoEnBodega')">Pedido en Bodega</button>
+      <button onclick="changeOrderStatusManually('bodegaEnvioPedido')">Bodega Envío Pedido</button>
+      <button onclick="changeOrderStatusManually('caminoATienda')">Camino a Tienda</button>
+      <button onclick="changeOrderStatusManually('sucursalRecibioPedido')">Sucursal Recibió Pedido</button>
+    </div>
+  </div>
+
+  <!-- Contenedor oculto para exportar recepción (se usa para generar la imagen a descargar) -->
+  <div id="exportReceptionHiddenContainer" style="display: none; position: absolute; left: -9999px; top: -9999px; background: #ffffff; padding: 20px; width: 1200px;">
+    <img id="exportReceptionLogo" src="../resources/images/logo.png" alt="Logo" style="width: 100px; height: auto; margin-bottom: 20px;">
+    <h2>Recepción de Pedido</h2>
+    <p><strong>ID Pedido:</strong> <span id="exportReceptionOrderIdHidden"></span></p>
+    <p><strong>Proveedor:</strong> <span id="exportReceptionProviderHidden"></span></p>
+    <p><strong>Sucursal:</strong> <span id="exportReceptionSucursalHidden"></span></p>
+    <p><strong>Fecha de Pedido:</strong> <span id="exportReceptionOrderDateHidden"></span></p>
+    <p><strong>Facturas:</strong> <span id="exportReceptionInvoiceNumberHidden"></span></p>
+    <p><strong>Información adicional:</strong> <span id="exportReceptionInvoiceDateHidden"></span></p>
+    <p><strong>Total de la Factura:</strong> Q<span id="exportReceptionInvoiceTotalHidden"></span></p>
+    <p><strong>Última Edición:</strong> <span id="exportReceptionLastEditHidden"></span></p>
+    <table border="1" style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Presentación</th>
+          <th>Cantidad Pedida</th>
+          <th>Cantidad Recibida</th>
+          <th>Advertencias</th>
+          <th>Comentarios</th>
+        </tr>
+      </thead>
+      <tbody id="exportReceptionProductsTableBody"></tbody>
+    </table>
+    <div style="margin-top: 20px; font-weight: bold; text-align: center;">¡Gracias por su pedido!</div>
+  </div>
+
+  <!-- Ticket oculto para exportar como imagen (para otros usos) -->
+  <div id="orderDetailsForImage" class="ticket" style="display: none; position: absolute; left: -9999px;">
+    <div class="ticket-header">
+      <img src="../resources/images/logo.png" alt="Logo" />
+      <h1>Pedido</h1>
+      <h2>ID Pedido: <span id="imgOrderId" class="order-id"></span></h2>
+    </div>
+    <div class="ticket-body">
+      <p><strong>Proveedor:</strong> <span id="imgProviderName"></span></p>
+      <p><strong>Sucursal:</strong> <span id="imgSucursalName"></span></p>
+      <p><strong>Entrega en:</strong> <span id="imgDestination"></span></p>
+      <p><strong>Fecha de Registro:</strong> <span id="imgSaveDate"></span></p>
+      <h3>Productos:</h3>
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Presentación</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
+        <tbody id="imgProductsTableBody"></tbody>
+      </table>
+    </div>
+    <div class="ticket-footer">
+      <p>Gracias por su pedido.</p>
+    </div>
+  </div>
+  
+  <script>
+    // Se expone la función global en caso de que otras secciones la requieran
+    window.downloadExportReceptionImage = downloadExportReceptionImage;
+  </script>
+</body>
+</html>

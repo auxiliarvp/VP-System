@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Validar Facturas | Sistema de Gestión</title>
+
+  <!-- Estilos compartidos -->
+  <link rel="stylesheet" href="menu.css" />
+  <link rel="stylesheet" href="facturas.css" />
+</head>
+<body>
+
+  <!-- ───── Menú lateral ───── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">Mi Sistema</div>
+    <nav>
+      <ul class="menu">
+        <li><a href="index.html"              class="nav-link">Dashboard</a></li>
+        <li><a href="validar-facturas.html"   class="nav-link">Validar Facturas</a></li>
+        <li><a href="facturas-validadas.html" class="nav-link">Facturas Validadas</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- ───── Contenido principal ───── -->
+  <main class="main">
+    <header class="topbar">
+      <button id="toggleBtn" class="toggle-btn">☰</button>
+      <h1>Validar Facturas</h1>
+    </header>
+
+    <!-- Filtros -->
+    <section style="margin-bottom:1rem;">
+      <input id="invoiceSearch"  type="text" placeholder="Buscar N° factura…" />
+      <input id="orderSearch"    type="text" placeholder="Buscar ID pedido…" />
+      <button id="reloadBtn">Actualizar</button>
+    </section>
+
+    <!-- Tabla de facturas pendientes -->
+    <div style="overflow-x:auto;">
+      <table class="invoice-table">
+        <thead>
+          <tr>
+            <th>N° Factura</th>
+            <th>Fecha</th>
+            <th>Proveedor</th>
+            <th>Sucursal</th>
+            <th>ID Pedido</th>
+            <th>Total (Q)</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal – Ver únicamente -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2>Detalle de la Factura</h2>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <!-- Modal – Editar y Validar -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeEditModal()">&times;</span>
+      <h2>Editar y Validar Factura</h2>
+
+      <input type="hidden" id="editOrderId" />
+      <input type="hidden" id="editIdx" />
+
+      <label>N° Factura:</label>
+      <input id="editNumber" type="text" /><br/><br/>
+
+      <label>Fecha factura:</label>
+      <input id="editDate" type="date" /><br/><br/>
+
+      <label>Total (Q):</label>
+      <input id="editTotal" type="number" step="0.01" /><br/><br/>
+
+      <button id="saveValidateBtn" class="table-btn">Guardar y Validar</button>
+    </div>
+  </div>
+
+  <!-- Firebase + conexión -->
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="../database/connection.js"></script>
+
+  <!-- Lógica -->
+  <script defer src="validar-facturas.js"></script>
+
+  <!-- Navegación (activo + toggle) -->
+  <script>
+    document.querySelectorAll('.nav-link').forEach(l=>{
+      if(location.pathname.endsWith(l.getAttribute('href'))) l.classList.add('active');
+    });
+    document.getElementById('toggleBtn').onclick=()=>document.getElementById('sidebar').classList.toggle('collapsed');
+  </script>
+</body>
+</html>

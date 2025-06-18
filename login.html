@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <!-- Metadatos para compatibilidad y responsividad -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Título -->
+  <title>Login</title>
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- SweetAlert2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <!-- CSS separado -->
+  <link href="CSS/Login.css" rel="stylesheet">
+
+  <!-- Firebase SDKs (sin configuración) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <!-- CryptoJS para SHA256 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <!-- Conexión centralizada a Firebase -->
+  <script src="database/connection.js"></script>
+</head>
+<body class="bg-light">
+
+  <div class="container-fluid vh-100">
+    <div class="row h-100">
+      <!-- PANEL IZQUIERDO (solo en md+) -->
+      <div class="col-md-6 d-none d-md-flex left-panel align-items-center justify-content-center">
+        <!-- Logo ampliado -->
+        <img src="resources/images/logo.png" alt="Logo" class="img-fluid logo-lg">
+      </div>
+
+      <!-- PANEL DERECHO: FORMULARIO -->
+      <div class="col-md-6 col-12 d-flex align-items-center justify-content-center">
+        <div class="card p-4 shadow-sm login-card">
+          <h3 class="text-center mb-4">Iniciar Sesión</h3>
+          <div id="message" class="text-success mb-2"></div>
+          <div id="error" class="text-danger mb-2"></div>
+
+          <form id="login-form" novalidate>
+            <!-- Usuario -->
+            <div class="input-group mb-3">
+              <span class="input-group-text"><i class="fa fa-user"></i></span>
+              <select class="form-select" id="user-select" required>
+                <option value="" disabled selected>-- Elige un Usuario --</option>
+              </select>
+            </div>
+
+            <!-- Contraseña -->
+            <div class="input-group mb-3">
+              <span class="input-group-text"><i class="fa fa-lock"></i></span>
+              <input
+                type="password"
+                class="form-control"
+                id="password"
+                placeholder="Tu contraseña"
+                required
+              >
+              <span class="input-group-text" id="togglePassword">
+                <i class="fa fa-eye"></i>
+              </span>
+            </div>
+
+            <!-- Recordarme -->
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="remember-me">
+              <label class="form-check-label" for="remember-me">Recordarme</label>
+            </div>
+
+            <!-- Botón de login -->
+            <button type="submit" class="btn btn-primary w-100 position-relative" id="login-button">
+              <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true" id="login-spinner"></span>
+              Entrar
+            </button>
+
+            <!-- Crear Admin -->
+            <button type="button" class="btn btn-danger w-100 mt-3" id="create-admin">Crear Admin</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SweetAlert2 JS + Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Lógica de login y admin embebida -->
+  <script>
+    // Referencias al DOM
+    const userSelect     = document.getElementById('user-select');
+    const passwordInput  = document.getElementById('password');
+    const togglePwd      = document.getElementById('togglePassword');
+    const rememberMe     = document.getElementById('remember-me');
+    const loginForm      = document.getElementById('login-form');
+    const loginBtn       = document.getElementById('login-button');
+    const spinner        = document.getElementById('login-spinner');
+    const messageDiv     = document.getElementById('message');
+    const errorDiv       = document.getElementById('error');
+    const createAdminBtn = document.getElementById('create-admin');
+
+    // Cargar usuarios desde Firestore y preseleccionar si está guardado
+    function loadUsers() {
+      db.collection('usuarios').get()
+        .then(snapshot => {
+          userSelect.innerHTML = '<option value="" disabled>-- Elige un Usuario --</option>';
+          snapshot.forEach(doc => {
+            const u   = doc.data().username;
+            const opt = document.createElement('option');
+            opt.value = u;
+            opt.textContent = u;
+            userSelect.append(opt);
+          });
+          const saved = localStorage.getItem('rememberedUser');
+          if (saved) {
+            userSelect.value   = saved;
+            rememberMe.checked = true;
+          }
+        })
+        .catch(e => console.error('Error al cargar usuarios:', e));
+    }
+
+    // Mostrar/ocultar contraseña
+    togglePwd.addEventListener('click', () => {
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      togglePwd.firstElementChild.classList.toggle('fa-eye-slash');
+    });
+
+    // Helper: mostrar error con SweetAlert2 y enfocar
+    function showError(msg, focusEl) {
+      Swal.fire({ icon: 'error', title: 'Error', text: msg });
+      focusEl.focus();
+    }
+
+    // Manejar envío de login
+    loginForm.addEventListener('submit', e => {
+      e.preventDefault();
+      messageDiv.textContent = '';
+      errorDiv.textContent   = '';
+
+      const user = userSelect.value;
+      const pwd  = passwordInput.value.trim();
+
+      // Validaciones básicas
+      if (!user) {
+        return showError('Selecciona un usuario', userSelect);
+      }
+      if (!pwd) {
+        return showError('Ingresa tu contraseña', passwordInput);
+      }
+
+      // Recordarme
+      if (rememberMe.checked) {
+        localStorage.setItem('rememberedUser', user);
+      } else {
+        localStorage.removeItem('rememberedUser');
+      }
+
+      // Mostrar loader
+      loginBtn.disabled = true;
+      spinner.classList.remove('d-none');
+
+      // Simular y validar contra Firestore
+      db.collection('usuarios')
+        .where('username', '==', user)
+        .limit(1)
+        .get()
+        .then(snapshot => {
+          const doc  = snapshot.docs[0];
+          const data = doc && doc.data();
+          const hash = CryptoJS.SHA256(pwd).toString();
+
+          setTimeout(() => {
+            spinner.classList.add('d-none');
+            loginBtn.disabled = false;
+
+            if (data && data.password === hash) {
+              Swal.fire({
+                icon: 'success',
+                title: `¡Bienvenido, ${user}!`,
+                showConfirmButton: false,
+                timer: 1500
+              }).then(() => {
+                localStorage.setItem('usuarioLogueado', user);
+                window.location.href = 'index.html';
+              });
+            } else {
+              showError('Usuario o contraseña incorrectos', passwordInput);
+            }
+          }, 1500);
+        })
+        .catch(err => {
+          console.error('Error al autenticar:', err);
+          spinner.classList.add('d-none');
+          loginBtn.disabled = false;
+          showError('Error de conexión', loginBtn);
+        });
+    });
+
+    // Lógica para crear usuario admin temporal
+    createAdminBtn.addEventListener('click', () => {
+      const adminUser = 'admin';
+      const adminPass = '123';
+      const hash      = CryptoJS.SHA256(adminPass).toString();
+      const adminData = {
+        username: adminUser,
+        password: hash,
+        rol: 'administrador',
+        sucursalId: 'default_sucursal'
+      };
+
+      db.collection('usuarios')
+        .where('username', '==', adminUser)
+        .limit(1)
+        .get()
+        .then(snap => {
+          if (!snap.empty) {
+            messageDiv.textContent = 'El usuario admin ya existe.';
+            return;
+          }
+          return db.collection('usuarios').add(adminData)
+            .then(() => {
+              messageDiv.textContent = 'Usuario admin creado exitosamente.';
+              const opt = document.createElement('option');
+              opt.value = adminUser;
+              opt.textContent = adminUser;
+              userSelect.append(opt);
+              createAdminBtn.disabled    = true;
+              createAdminBtn.textContent = 'Admin Creado';
+            });
+        })
+        .catch(e => {
+          console.error('Error al crear/verificar admin:', e);
+          errorDiv.textContent = 'Error al crear/verificar el usuario admin.';
+        });
+    });
+
+    // Inicializar carga de usuarios al abrir la página
+    window.addEventListener('DOMContentLoaded', loadUsers);
+  </script>
+</body>
+</html>

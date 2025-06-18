@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard | Sistema de Gestión</title>
+
+  <link rel="stylesheet" href="menu.css" />
+</head>
+<body>
+
+  <!-- ─────────── MENÚ LATERAL ─────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">Mi Sistema</div>
+
+    <nav>
+      <ul class="menu">
+        <li><a href="index.html"              class="nav-link">Dashboard</a></li>
+        <li><a href="validar-facturas.html"   class="nav-link">Validar Facturas</a></li>
+        <li><a href="facturas-validadas.html" class="nav-link">Facturas Validadas</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- ─────────── CONTENIDO PRINCIPAL ─────────── -->
+  <main class="main">
+    <header class="topbar">
+      <button id="toggleBtn" class="toggle-btn">☰</button>
+      <h1>Dashboard</h1>
+    </header>
+
+    <!-- Panel de métricas de ejemplo -->
+    <section class="dashboard">
+      <div class="card">
+        <h2>Pedidos hoy</h2>
+        <p class="value">34</p>
+      </div>
+      <div class="card">
+        <h2>Facturas pendientes</h2>
+        <p class="value">12</p>
+      </div>
+      <div class="card">
+        <h2>Facturas validadas</h2>
+        <p class="value">258</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ─────────── SCRIPT ─────────── -->
+  <script>
+    // Resalta la opción activa según la URL
+    document.querySelectorAll('.nav-link').forEach(link => {
+      if (location.pathname.endsWith(link.getAttribute('href'))) {
+        link.classList.add('active');
+      }
+    });
+
+    // Toggle de menú en pantallas pequeñas
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('toggleBtn').onclick = () => {
+      sidebar.classList.toggle('collapsed');
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+:root {
+    --bs-body-bg: #f8f9fa;
+    --sidebar-bg: #ffffff;
+    --sidebar-border: #e0e0e0;
+    --primary: #0d6efd;
+    --light-blue: #e7f1ff;
+  }
+  
+  /* ------- Layout base ------- */
+  body {
+    background: var(--bs-body-bg);
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* ------- Sidebar ------- */
+  .sidebar {
+    width: 260px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    padding-top: 1rem;
+    transition: transform 0.3s ease;
+  }
+  .sidebar.nav-hidden { transform: translateX(-100%); }
+  
+  /* Contenido principal */
+  .content {
+    margin-left: 260px;
+    padding: 1rem;
+    transition: margin-left 0.3s ease;
+  }
+  .content.expanded { margin-left: 0; }
+  
+  /* Logo (más grande) */
+  .logo { max-width: 200px; }
+  
+  /* Sidebar links */
+  .oe_menu .nav-link {
+    color: #495057;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+  }
+  .oe_menu .nav-link i { width: 20px; }
+  
+  .oe_menu .nav-link:hover,
+  .oe_menu .nav-link.active {
+    background: var(--light-blue);
+    color: var(--primary);
+  }
+  
+  /* ------- Header ------- */
+  .header {
+    height: 60px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--sidebar-border);
+    padding: 0 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header .user-info { font-size: 0.9rem; color: #495057; }
+  .header .user-info i { cursor: pointer; }
+  
+  /* ------- Botones ------- */
+  .menu-button {
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.55rem 1rem;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.95rem;
+    text-align: left;
+    transition: background 0.25s;
+  }
+  .menu-button:hover { background: #0b5ed7; }
+  
+  /* Botón de cerrar sesión en header */
+  #logout-button.btn-danger {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  /* Título central */
+  .menu-principal { font-size: 2rem; font-weight: 700; color: #333; }
+  
+  /* ------- Responsive ------- */
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 100%;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--sidebar-border);
+    }
+    .content { margin-left: 0; }
+  }
+  
