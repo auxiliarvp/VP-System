@@ -1,7 +1,6 @@
 // dashboard.js
-// Utiliza window.db definido en connection.js
+// Usa window.db expuesto por connection.js
 
-// Métricas
 const totalProvidersEl   = document.getElementById('totalProviders');
 const totalProductsEl    = document.getElementById('totalProducts');
 const topProviderNameEl  = document.getElementById('topProviderName');
@@ -9,35 +8,26 @@ const topProviderSpendEl = document.getElementById('topProviderSpend');
 const topProductNameEl   = document.getElementById('topProductName');
 const topProductConsumeEl= document.getElementById('topProductConsume');
 
-// Contextos de gráficas
-const ctxProv    = document.getElementById('productsByProviderChart').getContext('2d');
 const ctxTopProv = document.getElementById('topProvidersChart').getContext('2d');
 const ctxTopProd = document.getElementById('topProductsChart').getContext('2d');
 
-/**
- * Carga órdenes (suponiendo colección "orders" con campos
- * providerId, productId y amount)
- */
+/** Trae todas las órdenes de gasto/consumo */
 async function fetchOrders() {
   const snap = await db.collection('orders').get();
   return snap.docs.map(d => d.data());
 }
 
-/**
- * Actualiza métricas: totales + top proveedor/producto
- */
+/** Actualiza métricas principales */
 async function updateMetrics() {
-  // Totales
   const provSnap = await db.collection('providers').get();
   totalProvidersEl.textContent = provSnap.size;
 
   const prodSnap = await db.collection('products').get();
   totalProductsEl.textContent = prodSnap.size;
 
-  // Consumos
   const orders = await fetchOrders();
-  const spendByProv = {};
-  const consumeByProd = {};
+  const spendByProv = {}, consumeByProd = {};
+
   orders.forEach(o => {
     if (o.providerId && typeof o.amount === 'number') {
       spendByProv[o.providerId] = (spendByProv[o.providerId]||0) + o.amount;
@@ -66,28 +56,7 @@ async function updateMetrics() {
   }
 }
 
-/**
- * Dibuja un bar chart de productos por proveedor
- */
-async function renderProductsByProvider() {
-  const provSnap = await db.collection('providers').orderBy('name').get();
-  const labels = [], data = [];
-  for (let d of provSnap.docs) {
-    labels.push(d.data().name);
-    const cnt = (await db.collection('products')
-      .where('providerId','==',d.id).get()).size;
-    data.push(cnt);
-  }
-  new Chart(ctxProv, {
-    type: 'bar',
-    data: { labels, datasets: [{ label:'Productos', data }] },
-    options:{ responsive:true, scales:{ y:{ beginAtZero:true } } }
-  });
-}
-
-/**
- * Dibuja el top 5 de proveedores por gasto
- */
+/** Dibuja Top 5 proveedores por gasto */
 async function renderTopProvidersChart() {
   const orders = await fetchOrders();
   const spendByProv = {};
@@ -99,9 +68,9 @@ async function renderTopProvidersChart() {
   const top5 = Object.entries(spendByProv)
     .sort((a,b)=>b[1]-a[1]).slice(0,5);
   const labels = [], data = [];
-  for (let [id, amt] of top5) {
+  for (const [id, amt] of top5) {
     const doc = await db.collection('providers').doc(id).get();
-    labels.push(doc.exists?doc.data().name:'—');
+    labels.push(doc.exists ? doc.data().name : '—');
     data.push(amt);
   }
   new Chart(ctxTopProv, {
@@ -111,9 +80,7 @@ async function renderTopProvidersChart() {
   });
 }
 
-/**
- * Dibuja el top 5 de productos por consumo
- */
+/** Dibuja Top 5 productos por consumo */
 async function renderTopProductsChart() {
   const orders = await fetchOrders();
   const consumeByProd = {};
@@ -125,9 +92,9 @@ async function renderTopProductsChart() {
   const top5 = Object.entries(consumeByProd)
     .sort((a,b)=>b[1]-a[1]).slice(0,5);
   const labels = [], data = [];
-  for (let [id, amt] of top5) {
+  for (const [id, amt] of top5) {
     const doc = await db.collection('products').doc(id).get();
-    labels.push(doc.exists?doc.data().name:'—');
+    labels.push(doc.exists ? doc.data().name : '—');
     data.push(amt);
   }
   new Chart(ctxTopProd, {
@@ -137,36 +104,9 @@ async function renderTopProductsChart() {
   });
 }
 
-/**
- * Exporta proveedores y productos a CSV
- */
-async function exportCSV() {
-  const provSnap = await db.collection('providers').orderBy('name').get();
-  const prodSnap = await db.collection('products').orderBy('name').get();
-  const headers = ['tipo','id','nombre','email','telefono','presentacion','proveedorId','createdAt'];
-  const fmt = ts => ts&&ts.toDate?ts.toDate().toLocaleString('es-ES'):'';
-  const rows = [];
-  provSnap.forEach(d=>{
-    const c=d.data();
-    rows.push(['Proveedor',d.id,c.name,c.email||'',c.phone||'','','',fmt(c.createdAt)]);
-  });
-  prodSnap.forEach(d=>{
-    const c=d.data();
-    rows.push(['Producto',d.id,c.name,'','',c.presentation,c.providerId||'',fmt(c.createdAt)]);
-  });
-  const esc=v=>`"${String(v).replace(/"/g,'""')}"`;
-  const csv=[headers.join(','),...rows.map(r=>r.map(esc).join(','))].join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='export_inventario.csv'; a.click();
-  URL.revokeObjectURL(url);
-}
-
 // Inicialización
-window.addEventListener('DOMContentLoaded', async ()=>{
+window.addEventListener('DOMContentLoaded', async () => {
   await updateMetrics();
-  renderProductsByProvider();
   renderTopProvidersChart();
   renderTopProductsChart();
 });
