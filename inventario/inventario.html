@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Proveedores y Productos</title>
+
+  <!-- Bootstrap 5 -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  />
+  <!-- Font Awesome -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <!-- CSS global -->
+  <link rel="stylesheet" href="../CSS/empresaglobal.css"/>
+
+  <!-- Estilos adicionales: resalta la fila seleccionada -->
+  <style>
+    /* Asegura que cada <td> de la fila .selected tenga fondo primario y texto blanco */
+    .table tbody tr.selected td {
+      background-color: var(--color-primary) !important;
+      color: #fff !important;
+    }
+  </style>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+  <script src="../database/connection.js"></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Lógica -->
+  <script defer src="inventario.js"></script>
+</head>
+<body>
+  <div class="container-fluid p-4">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-secondary" onclick="location.href='../empresaMenu.html'">
+          ← Menú
+        </button>
+        <h1 class="h4 mb-0">Gestión de Proveedores y Productos</h1>
+      </div>
+      <button class="btn btn-outline-primary" onclick="location.href='dashboard.html'">
+        Dashboard
+      </button>
+    </div>
+
+    <!-- Pestañas -->
+    <ul class="nav nav-tabs mb-3">
+      <li class="nav-item">
+        <button
+          class="nav-link active"
+          data-bs-toggle="tab"
+          data-bs-target="#providersTab"
+          type="button"
+        >
+          Proveedores
+        </button>
+      </li>
+      <li class="nav-item">
+        <button
+          class="nav-link"
+          data-bs-toggle="tab"
+          data-bs-target="#productsTab"
+          type="button"
+        >
+          Productos
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- PROVEEDORES -->
+      <div id="providersTab" class="tab-pane fade show active">
+        <div class="d-flex align-items-center mb-3 gap-2 flex-wrap">
+          <button class="btn btn-primary" onclick="showAddProviderForm()">Agregar</button>
+          <button id="viewProviderBtn" class="btn btn-info" onclick="viewSelectedProvider()">Ver detalles</button>
+          <button id="editProviderBtn" class="btn btn-primary" onclick="editSelectedProvider()">Editar</button>
+          <button id="deleteProviderBtn" class="btn btn-danger" onclick="deleteSelectedProvider()">Eliminar</button>
+          <input id="providerSearchInput" class="form-control ms-auto" style="max-width:300px;" placeholder="Buscar proveedor…" onkeyup="filterProviders()"/>
+        </div>
+        <div class="table-responsive">
+          <table id="providersTable" class="table table-hover align-middle">
+            <thead class="table-dark">
+              <tr><th>Nombre</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PRODUCTOS -->
+      <div id="productsTab" class="tab-pane fade">
+        <div class="d-flex align-items-center mb-3 gap-2 flex-wrap">
+          <button class="btn btn-primary" onclick="showAddProductForm()">Agregar</button>
+          <button id="viewProductBtn" class="btn btn-info" onclick="viewSelectedProduct()">Ver detalles</button>
+          <button id="editProductBtn" class="btn btn-primary" onclick="editSelectedProduct()">Editar</button>
+          <button id="deleteProductBtn" class="btn btn-danger" onclick="deleteSelectedProduct()">Eliminar</button>
+          <input id="productSearchInput" class="form-control ms-auto" style="max-width:200px;" placeholder="Buscar producto…" onkeyup="filterProductsByName()"/>
+          <select id="productProviderFilter" class="form-select ms-2" style="max-width:200px;" onchange="filterProductsByProvider()">
+            <option value="">Todos los proveedores</option>
+          </select>
+        </div>
+        <div class="table-responsive">
+          <table id="productsTable" class="table table-hover align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Nombre</th>
+                <th>Presentación</th>
+                <th>Proveedor</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALES PROVEEDOR -->
+  <div id="addProviderModal" class="modal">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content p-4">
+        <button class="btn-close ms-auto" onclick="closeModal('addProviderModal')"></button>
+        <h2 class="h5 mb-3">Agregar proveedor</h2>
+        <input id="providerName" class="form-control mb-2" placeholder="Nombre" required/>
+        <input id="providerAddress" class="form-control mb-2" placeholder="Dirección"/>
+        <input id="providerPhone" type="tel" class="form-control mb-2" placeholder="Teléfono"/>
+        <input id="providerEmail" type="email" class="form-control mb-2" placeholder="Email"/>
+        <input id="providerPaymentTerms" class="form-control mb-2" placeholder="Términos de pago"/>
+        <input id="sellerName" class="form-control mb-2" placeholder="Vendedor"/>
+        <input id="sellerPhone" type="tel" class="form-control mb-2" placeholder="Tel. Vendedor"/>
+        <input id="chiefSellerName" class="form-control mb-2" placeholder="Jefe Ventas"/>
+        <input id="chiefSellerPhone" type="tel" class="form-control mb-2" placeholder="Tel. Jefe Ventas"/>
+        <input id="creditPersonName" class="form-control mb-2" placeholder="Créditos"/>
+        <input id="creditPersonPhone" type="tel" class="form-control mb-2" placeholder="Tel. Créditos"/>
+        <input id="providerType" class="form-control mb-2" placeholder="Tipo"/>
+        <input id="preferredPaymentMethod" class="form-control mb-2" placeholder="Método de pago preferido"/>
+        <textarea id="additionalNotes" class="form-control mb-3" placeholder="Notas"></textarea>
+        <button class="btn btn-primary w-100" onclick="addProvider()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editProviderModal" class="modal">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content p-4">
+        <button class="btn-close ms-auto" onclick="closeModal('editProviderModal')"></button>
+        <h2 class="h5 mb-3">Editar proveedor</h2>
+        <input type="hidden" id="editProviderId"/>
+        <input id="editProviderName" class="form-control mb-2" placeholder="Nombre" required/>
+        <input id="editProviderAddress" class="form-control mb-2" placeholder="Dirección"/>
+        <input id="editProviderPhone" type="tel" class="form-control mb-2" placeholder="Teléfono"/>
+        <input id="editProviderEmail" type="email" class="form-control mb-2" placeholder="Email"/>
+        <input id="editProviderPaymentTerms" class="form-control mb-2" placeholder="Términos de pago"/>
+        <input id="editSellerName" class="form-control mb-2" placeholder="Vendedor"/>
+        <input id="editSellerPhone" type="tel" class="form-control mb-2" placeholder="Tel. Vendedor"/>
+        <input id="editChiefSellerName" class="form-control mb-2" placeholder="Jefe Ventas"/>
+        <input id="editChiefSellerPhone" type="tel" class="form-control mb-2" placeholder="Tel. Jefe Ventas"/>
+        <input id="editCreditPersonName" class="form-control mb-2" placeholder="Créditos"/>
+        <input id="editCreditPersonPhone" type="tel" class="form-control mb-2" placeholder="Tel. Créditos"/>
+        <input id="editProviderType" class="form-control mb-2" placeholder="Tipo"/>
+        <input id="editPreferredPaymentMethod" class="form-control mb-2" placeholder="Método de pago preferido"/>
+        <textarea id="editAdditionalNotes" class="form-control mb-3" placeholder="Notas"></textarea>
+        <button class="btn btn-primary w-100" onclick="updateProvider()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewProviderModal" class="modal">
+    <div class="modal-dialog modal-dialog-scrollable">
+      <div class="modal-content p-4">
+        <button class="btn-close ms-auto" onclick="closeModal('viewProviderModal')"></button>
+        <h2 class="h5 mb-3">Detalles proveedor</h2>
+        <ul id="providerDetailsList" class="list-group small"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALES PRODUCTOS -->
+  <div id="addProductModal" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-content p-4">
+        <button class="btn-close ms-auto" onclick="closeModal('addProductModal')"></button>
+        <h2 class="h5 mb-3">Agregar producto</h2>
+        <input id="productName" class="form-control mb-2" placeholder="Nombre" required/>
+        <input id="productPresentation" class="form-control mb-2" placeholder="Presentación" required/>
+        <select id="providerSelect" class="form-select mb-3" required></select>
+        <button class="btn btn-primary w-100" onclick="addProduct()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editProductModal" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-content p-4">
+        <button class="btn-close ms-auto" onclick="closeModal('editProductModal')"></button>
+        <h2 class="h5 mb-3">Editar producto</h2>
+        <input type="hidden" id="editProductId"/>
+        <input id="editProductName" class="form-control mb-2" placeholder="Nombre" required/>
+        <input id="editProductPresentation" class="form-control mb-3" placeholder="Presentación" required/>
+        <button class="btn btn-primary w-100" onclick="updateProduct()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="viewProductModal" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-content p-4">
+        <button class="btn-close ms-auto" onclick="closeModal('viewProductModal')"></button>
+        <h2 class="h5 mb-3">Detalles producto</h2>
+        <ul id="productDetailsList" class="list-group small"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS + FontAwesome JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+</body>
+</html>
