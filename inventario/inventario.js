@@ -1,5 +1,7 @@
 /* ===============================================================
-   inventario.js – 20-Jun-2025 (sin paginación ni export CSV)
+   inventario.js – 20-Jun-2025
+   Modificado: precarga en editar proveedor; labels en español; 
+   modales centrados y fijos (display:flex + align/justify)
    =============================================================== */
 const $ = s => document.querySelector(s);
 
@@ -21,17 +23,10 @@ function makeRowsSelectable(tableSel, viewBtn, editBtn, delBtn) {
     const tr = e.target.closest('tr');
     if (!tr) return;
     const already = tr.classList.contains('selected');
-
-    // Deseleccionar todo
-    tbl.querySelectorAll('tbody tr.selected').forEach(row => {
-      row.classList.remove('selected');
-    });
-
-    if (!already) {
-      // Seleccionar la nueva fila
-      tr.classList.add('selected');
-    }
-    // Actualizar estado de botones
+    tbl.querySelectorAll('tbody tr.selected').forEach(row =>
+      row.classList.remove('selected')
+    );
+    if (!already) tr.classList.add('selected');
     toggleBtns(tableSel, viewBtn, editBtn, delBtn);
   });
 }
@@ -64,14 +59,21 @@ async function loadProviders() {
   });
 }
 
-function showAddProviderForm() {
-  const modal = document.getElementById('addProviderModal');
-  if (modal) modal.style.display = 'flex';
+function showModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.style.display = 'flex';
+  modal.style.alignItems = 'center';
+  modal.style.justifyContent = 'center';
 }
 
 function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.style.display = 'none';
+}
+
+function showAddProviderForm() {
+  showModal('addProviderModal');
 }
 
 async function addProvider() {
@@ -143,17 +145,43 @@ async function showProviderDetails(id) {
     return;
   }
   try {
-    const d = await db.collection('providers').doc(id).get();
-    if (!d.exists) return;
+    const doc = await db.collection('providers').doc(id).get();
+    if (!doc.exists) return;
+    const data = doc.data();
+
+    const labels = {
+      name: 'Nombre',
+      email: 'Correo electrónico',
+      phone: 'Teléfono',
+      providerAddress: 'Dirección',
+      providerPaymentTerms: 'Términos de pago',
+      sellerName: 'Vendedor',
+      sellerPhone: 'Tel. Vendedor',
+      chiefSellerName: 'Jefe de Ventas',
+      chiefSellerPhone: 'Tel. Jefe Ventas',
+      creditPersonName: 'Contacto Créditos',
+      creditPersonPhone: 'Tel. Créditos',
+      providerType: 'Tipo',
+      preferredPaymentMethod: 'Método de pago',
+      additionalNotes: 'Notas',
+      createdAt: 'Creado'
+    };
+
     ul.innerHTML = '';
-    Object.entries(d.data()).forEach(([key, val]) => {
+    for (const key of Object.keys(labels)) {
+      const label = labels[key];
+      let val = data[key];
+      if (key === 'createdAt' && val && val.toDate) {
+        val = val.toDate().toLocaleString('es-ES');
+      }
+      if (!val) val = '—';
       const li = document.createElement('li');
       li.className = 'list-group-item d-flex justify-content-between';
-      li.innerHTML = `<strong>${key}</strong><span>${val || '—'}</span>`;
+      li.innerHTML = `<strong>${label}</strong><span>${val}</span>`;
       ul.appendChild(li);
-    });
-    const modal = document.getElementById('viewProviderModal');
-    if (modal) modal.style.display = 'flex';
+    }
+
+    showModal('viewProviderModal');
   } catch (err) {
     console.error('Error en showProviderDetails:', err);
   }
@@ -174,18 +202,30 @@ async function editSelectedProvider() {
 async function showEditProviderForm(id) {
   const d = await db.collection('providers').doc(id).get();
   if (!d.exists) return;
-  $('#editProviderId').value = id;
-  Object.entries(d.data()).forEach(([k, v]) => {
-    const e = document.getElementById('edit' + k.charAt(0).toUpperCase() + k.slice(1));
-    if (e) e.value = v;
-  });
-  const modal = document.getElementById('editProviderModal');
-  if (modal) modal.style.display = 'flex';
+  const data = d.data();
+
+  $('#editProviderId').value               = id;
+  $('#editProviderName').value             = data.name || '';
+  $('#editProviderAddress').value          = data.providerAddress || '';
+  $('#editProviderPhone').value            = data.phone || '';
+  $('#editProviderEmail').value            = data.email || '';
+  $('#editProviderPaymentTerms').value     = data.providerPaymentTerms || '';
+  $('#editSellerName').value               = data.sellerName || '';
+  $('#editSellerPhone').value              = data.sellerPhone || '';
+  $('#editChiefSellerName').value          = data.chiefSellerName || '';
+  $('#editChiefSellerPhone').value         = data.chiefSellerPhone || '';
+  $('#editCreditPersonName').value         = data.creditPersonName || '';
+  $('#editCreditPersonPhone').value        = data.creditPersonPhone || '';
+  $('#editProviderType').value             = data.providerType || '';
+  $('#editPreferredPaymentMethod').value   = data.preferredPaymentMethod || '';
+  $('#editAdditionalNotes').value          = data.additionalNotes || '';
+
+  showModal('editProviderModal');
 }
 
 async function updateProvider() {
-  const id    = $('#editProviderId')?.value;
-  const name  = $('#editProviderName')?.value.trim() || '';
+  const id = $('#editProviderId')?.value;
+  const name = $('#editProviderName')?.value.trim() || '';
   const email = $('#editProviderEmail')?.value.trim() || '';
 
   if (!name) {
@@ -204,16 +244,22 @@ async function updateProvider() {
   });
   if (!isConfirmed) return;
 
-  const keys = [
-    'Name','Address','Phone','Email','PaymentTerms','SellerName','SellerPhone',
-    'ChiefSellerName','ChiefSellerPhone','CreditPersonName','CreditPersonPhone',
-    'ProviderType','PreferredPaymentMethod','AdditionalNotes'
-  ];
-  const data = {};
-  keys.forEach(k => {
-    const e = document.getElementById(`edit${k}`);
-    if (e) data[k.charAt(0).toLowerCase() + k.slice(1)] = e.value.trim();
-  });
+  const data = {
+    name:                      $('#editProviderName').value.trim(),
+    providerAddress:           $('#editProviderAddress').value.trim(),
+    phone:                     $('#editProviderPhone').value.trim(),
+    email:                     $('#editProviderEmail').value.trim(),
+    providerPaymentTerms:      $('#editProviderPaymentTerms').value.trim(),
+    sellerName:                $('#editSellerName').value.trim(),
+    sellerPhone:               $('#editSellerPhone').value.trim(),
+    chiefSellerName:           $('#editChiefSellerName').value.trim(),
+    chiefSellerPhone:          $('#editChiefSellerPhone').value.trim(),
+    creditPersonName:          $('#editCreditPersonName').value.trim(),
+    creditPersonPhone:         $('#editCreditPersonPhone').value.trim(),
+    providerType:              $('#editProviderType').value.trim(),
+    preferredPaymentMethod:    $('#editPreferredPaymentMethod').value.trim(),
+    additionalNotes:           $('#editAdditionalNotes').value.trim()
+  };
 
   try {
     await db.collection('providers').doc(id).update(data);
@@ -283,9 +329,7 @@ async function loadProducts() {
 }
 
 function showAddProductForm() {
-  loadProviderOptions();
-  const modal = document.getElementById('addProductModal');
-  if (modal) modal.style.display = 'flex';
+  showModal('addProductModal');
 }
 
 async function addProduct() {
@@ -303,8 +347,12 @@ async function addProduct() {
   });
   if (!isConfirmed) return;
 
-  const payload = { name, presentation: pres, providerId: pid,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+  const payload = {
+    name,
+    presentation: pres,
+    providerId: pid,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
   try {
     const ref = await db.collection('products').add(payload);
     audit('create','products',ref.id,{name});
@@ -335,27 +383,37 @@ async function showProductDetails(id) {
     return;
   }
   try {
-    const d = await db.collection('products').doc(id).get();
-    if (!d.exists) return;
-    const p = d.data();
-    const pv = p.providerId
-      ? await db.collection('providers').doc(p.providerId).get()
-      : null;
-    const provName = pv?.exists ? pv.data().name : '—';
+    const doc = await db.collection('products').doc(id).get();
+    if (!doc.exists) return;
+    const data = doc.data();
+
+    let provName = '—';
+    if (data.providerId) {
+      const pv = await db.collection('providers').doc(data.providerId).get();
+      if (pv.exists) provName = pv.data().name;
+    }
+
+    const items = [
+      { label: 'Nombre',       value: data.name || '—' },
+      { label: 'Presentación', value: data.presentation || '—' },
+      { label: 'Proveedor',    value: provName },
+      {
+        label: 'Creado',
+        value: data.createdAt && data.createdAt.toDate
+          ? data.createdAt.toDate().toLocaleString('es-ES')
+          : '—'
+      }
+    ];
+
     ul.innerHTML = '';
-    [
-      ['Nombre', p.name],
-      ['Presentación', p.presentation],
-      ['Proveedor', provName],
-      ['Creado', p.createdAt?.toDate().toLocaleString() || '—']
-    ].forEach(([label, val]) => {
+    items.forEach(({label, value}) => {
       const li = document.createElement('li');
       li.className = 'list-group-item d-flex justify-content-between';
-      li.innerHTML = `<strong>${label}</strong><span>${val}</span>`;
+      li.innerHTML = `<strong>${label}</strong><span>${value}</span>`;
       ul.appendChild(li);
     });
-    const modal = document.getElementById('viewProductModal');
-    if (modal) modal.style.display = 'flex';
+
+    showModal('viewProductModal');
   } catch (err) {
     console.error('Error en showProductDetails:', err);
   }
@@ -378,14 +436,13 @@ async function showEditProductForm(id) {
   $('#editProductId').value = id;
   $('#editProductName').value = d.data().name;
   $('#editProductPresentation').value = d.data().presentation;
-  const modal = document.getElementById('editProductModal');
-  if (modal) modal.style.display = 'flex';
+  showModal('editProductModal');
 }
 
 async function updateProduct() {
-  const id = $('#editProductId')?.value;
+  const id   = $('#editProductId')?.value;
   const data = {
-    name: $('#editProductName')?.value.trim() || '',
+    name:         $('#editProductName')?.value.trim() || '',
     presentation: $('#editProductPresentation')?.value.trim() || ''
   };
   try {
@@ -440,14 +497,10 @@ function filterProductsByProvider() {
   });
 }
 
-/* --------- Carga de opciones de proveedor --------- */
 async function loadProviderOptions() {
   const sel  = document.getElementById('providerSelect');
   const filt = document.getElementById('productProviderFilter');
-  if (!sel || !filt) {
-    console.warn('loadProviderOptions: select no encontrado');
-    return;
-  }
+  if (!sel || !filt) return;
   sel.innerHTML = '';
   filt.innerHTML = '<option value="">Todos los proveedores</option>';
   try {

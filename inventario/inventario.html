@@ -18,12 +18,27 @@
   <!-- CSS global -->
   <link rel="stylesheet" href="../CSS/empresaglobal.css"/>
 
-  <!-- Estilos adicionales: resalta la fila seleccionada -->
+  <!-- Estilos adicionales para modales fijos, centrados y scroll internos -->
   <style>
-    /* Asegura que cada <td> de la fila .selected tenga fondo primario y texto blanco */
-    .table tbody tr.selected td {
-      background-color: var(--color-primary) !important;
-      color: #fff !important;
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      align-items: center;
+      justify-content: center;
+      z-index: 1050;
+    }
+    .modal .modal-dialog {
+      max-height: 80vh;
+      overflow-y: auto;
+      margin: 0;
+      width: 90%;
+      max-width: 500px;
+    }
+    .modal .modal-content {
+      position: relative;
     }
   </style>
 
@@ -43,7 +58,7 @@
     <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div class="d-flex align-items-center gap-2">
-        <button class="btn btn-secondary" onclick="location.href='../empresaMenu.html'">
+        <button class="btn btn-secondary" onclick="location.href='../index.html'">
           ← Menú
         </button>
         <h1 class="h4 mb-0">Gestión de Proveedores y Productos</h1>
@@ -56,22 +71,12 @@
     <!-- Pestañas -->
     <ul class="nav nav-tabs mb-3">
       <li class="nav-item">
-        <button
-          class="nav-link active"
-          data-bs-toggle="tab"
-          data-bs-target="#providersTab"
-          type="button"
-        >
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#providersTab" type="button">
           Proveedores
         </button>
       </li>
       <li class="nav-item">
-        <button
-          class="nav-link"
-          data-bs-toggle="tab"
-          data-bs-target="#productsTab"
-          type="button"
-        >
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#productsTab" type="button">
           Productos
         </button>
       </li>
@@ -127,7 +132,7 @@
 
   <!-- MODALES PROVEEDOR -->
   <div id="addProviderModal" class="modal">
-    <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-dialog">
       <div class="modal-content p-4">
         <button class="btn-close ms-auto" onclick="closeModal('addProviderModal')"></button>
         <h2 class="h5 mb-3">Agregar proveedor</h2>
@@ -151,7 +156,7 @@
   </div>
 
   <div id="editProviderModal" class="modal">
-    <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-dialog">
       <div class="modal-content p-4">
         <button class="btn-close ms-auto" onclick="closeModal('editProviderModal')"></button>
         <h2 class="h5 mb-3">Editar proveedor</h2>
@@ -176,7 +181,7 @@
   </div>
 
   <div id="viewProviderModal" class="modal">
-    <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-dialog">
       <div class="modal-content p-4">
         <button class="btn-close ms-auto" onclick="closeModal('viewProviderModal')"></button>
         <h2 class="h5 mb-3">Detalles proveedor</h2>
