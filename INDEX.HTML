@@ -15,61 +15,74 @@
 <body>
   <!-- ===== SIDEBAR ================================================== -->
   <nav class="sidebar d-flex flex-column">
-    <!-- Logo (más grande) -->
+    <!-- Logo -->
     <div class="logo-container text-center mb-4 px-3">
       <img src="resources/images/logo.png" alt="Logo" class="logo img-fluid" />
     </div>
 
-    <!-- Menú principal -->
+    <!-- Menú principal (visibles para todos, excepto ‘bodega’ cuando se ocultan) -->
     <ul class="oe_menu nav flex-column">
       <li class="nav-item">
-        <a class="nav-link" href="realizarPedido/realizadPedido.html">
+        <a class="nav-link" href="realizadPedido.html">
           <i class="fas fa-shopping-cart me-2"></i> Realizar pedidos
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="gestionPedidos/pedidos.html">
+        <a class="nav-link" href="pedidos.html">
           <i class="fas fa-list-check me-2"></i> Gestión de Pedidos
         </a>
       </li>
     </ul>
 
-    <!-- Botones para administradores -->
-    <div class="right-menu d-flex flex-column gap-2 mt-auto px-3">
-      <button class="menu-button admin-only" id="empresa-button">
-        <i class="fas fa-building me-2"></i> Empresa
-      </button>
-      <button class="menu-button admin-only" id="bodega-button">
-        <i class="fas fa-warehouse me-2"></i> Bodega
-      </button>
-      <!-- NUEVOS: Cuadres y Gráficos de Venta -->
-      <button class="menu-button admin-only" id="cuadres-button">
-        <i class="fas fa-calculator me-2"></i> Cuadres
-      </button>
-      <button class="menu-button admin-only" id="grafico-ventas-button">
-        <i class="fas fa-chart-area me-2"></i> Gráficos de Venta
-      </button>
-      <button class="menu-button admin-only" id="reportes-button">
-        <i class="fas fa-chart-line me-2"></i> Reportes
-      </button>
-      <button class="menu-button admin-only" id="rrhh-button">
-        <i class="fas fa-users me-2"></i> Recursos Humanos
-      </button>
-      <button class="menu-button admin-only" id="facturas-button">
-        <i class="fas fa-file-invoice-dollar me-2"></i> Facturas
-      </button>
-    </div>
+    <!-- Accesos sólo para administradores (todos con <li><a>…) -->
+    <ul class="admin-menu nav flex-column gap-1 mt-auto px-3">
+      <li class="nav-item admin-only">
+        <a class="nav-link" id="empresa-button" href="empresaMenu.html">
+          <i class="fas fa-building me-2"></i> Empresa
+        </a>
+      </li>
+      <li class="nav-item admin-only">
+        <a class="nav-link" id="bodega-button" href="#">
+          <i class="fas fa-warehouse me-2"></i> Bodega
+        </a>
+      </li>
+      <li class="nav-item admin-only">
+        <a class="nav-link" id="cuadres-button" href="cuadres.html">
+          <i class="fas fa-calculator me-2"></i> Cuadres
+        </a>
+      </li>
+      <li class="nav-item admin-only">
+        <a class="nav-link" id="grafico-ventas-button" href="graficoVentas.html">
+          <i class="fas fa-chart-area me-2"></i> Gráficos de Venta
+        </a>
+      </li>
+      <li class="nav-item admin-only">
+        <a class="nav-link" id="reportes-button" href="reportes.html">
+          <i class="fas fa-chart-line me-2"></i> Reportes
+        </a>
+      </li>
+      <li class="nav-item admin-only">
+        <a class="nav-link" id="rrhh-button" href="rrhh.html">
+          <i class="fas fa-users me-2"></i> Recursos Humanos
+        </a>
+      </li>
+      <li class="nav-item admin-only">
+        <a class="nav-link" id="facturas-button" href="facturas.html">
+          <i class="fas fa-file-invoice-dollar me-2"></i> Facturas
+        </a>
+      </li>
+      <li class="nav-item admin-only">
+        <a class="nav-link" id="inventario-button" href="inventario.html">
+          <i class="fas fa-box-open me-2"></i> Inventario
+        </a>
+      </li>
+    </ul>
   </nav>
 
   <!-- ===== CONTENIDO PRINCIPAL ===================================== -->
   <div class="content">
     <header class="header d-flex align-items-center">
-      <!-- Toggler izquierdo para móvil -->
-      <button class="btn d-md-none" id="sidebarToggle">
-        <i class="fas fa-bars"></i>
-      </button>
-
-      <!-- Usuario + logout alineados a la derecha -->
+      <button class="btn d-md-none" id="sidebarToggle"><i class="fas fa-bars"></i></button>
       <div class="user-info d-flex align-items-center gap-3 ms-auto">
         <i class="fas fa-user-circle fa-lg"></i>
         <span id="welcome-message">Bienvenido, Usuario</span>
@@ -81,20 +94,20 @@
 
     <main class="pt-5">
       <h1 class="menu-principal text-center mb-5">DASHBOARD</h1>
-      <!-- Aquí irán tus módulos o gráficos -->
+      <!-- contenido -->
     </main>
   </div>
 
-  <!-- ===== CONTENEDOR OCULTO DE FACTURA ============================ -->
+  <!-- ===== CONTENEDOR OCULTO DE FACTURA (sin cambios) =============== -->
   <div id="exportInvoiceContainer" style="display:none; padding:20px; border:1px solid #ccc; max-width:600px; margin:20px auto; font-family: Arial, sans-serif;">
     <h2 style="text-align:center; margin-bottom:20px;">Factura</h2>
-    <div style="margin-bottom:10px;"><strong>Número:</strong> <span id="exportInvoiceNum"></span></div>
-    <div style="margin-bottom:10px;"><strong>Fecha:</strong> <span id="exportInvoiceDate"></span></div>
-    <div style="margin-bottom:10px;"><strong>Proveedor:</strong> <span id="exportInvoiceSupplier"></span></div>
-    <div style="margin-bottom:10px;"><strong>Producto:</strong> <span id="exportInvoiceProduct"></span></div>
-    <div style="margin-bottom:10px;"><strong>Cantidad:</strong> <span id="exportInvoiceQuantity"></span></div>
-    <div style="margin-bottom:10px;"><strong>Precio Unitario:</strong> Q.<span id="exportInvoiceUnitPrice"></span></div>
-    <div style="margin-bottom:10px;"><strong>Total:</strong> Q.<span id="exportInvoiceTotal"></span></div>
+    <div><strong>Número:</strong> <span id="exportInvoiceNum"></span></div>
+    <div><strong>Fecha:</strong> <span id="exportInvoiceDate"></span></div>
+    <div><strong>Proveedor:</strong> <span id="exportInvoiceSupplier"></span></div>
+    <div><strong>Producto:</strong> <span id="exportInvoiceProduct"></span></div>
+    <div><strong>Cantidad:</strong> <span id="exportInvoiceQuantity"></span></div>
+    <div><strong>Precio Unitario:</strong> Q.<span id="exportInvoiceUnitPrice"></span></div>
+    <div><strong>Total:</strong> Q.<span id="exportInvoiceTotal"></span></div>
     <div style="text-align:center; margin-top:20px;"><em>Gracias por su compra</em></div>
   </div>
 
@@ -104,30 +117,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script src="database/connection.js"></script>
 
-  <!-- JS embebido: roles + navegación -->
+  <!-- JS: roles + ajustes de enlaces -->
   <script>
-    const welcomeMessage        = document.getElementById('welcome-message');
-    const empresaButton         = document.getElementById('empresa-button');
-    const bodegaButton          = document.getElementById('bodega-button');
-    const cuadresButton         = document.getElementById('cuadres-button');
-    const graficoVentasButton   = document.getElementById('grafico-ventas-button');
-    const reportesButton        = document.getElementById('reportes-button');
-    const rrhhButton            = document.getElementById('rrhh-button');
-    const facturasButton        = document.getElementById('facturas-button');
-    const logoutButton          = document.getElementById('logout-button');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const bodegaButton   = document.getElementById('bodega-button');
+    const logoutButton   = document.getElementById('logout-button');
 
-    /* ------ Control de roles ------ */
     function ajustarMenuSegunRol(rol) {
       if (rol === 'administrador') {
-        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-block');
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
       } else if (rol === 'bodega') {
         document.querySelector('.oe_menu').style.display = 'none';
         document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-        // Permitir solo botón de bodega modificado
-        bodegaButton.classList.remove('admin-only');
-        bodegaButton.style.display = 'inline-block';
+        bodegaButton.style.display = 'block';
         bodegaButton.textContent = 'Inventario Bodega';
-        bodegaButton.onclick = () => window.location.href = 'InventarioBodega/salidas encargado bodega/salidas.html';
+        bodegaButton.href = 'salidas.html';
       }
     }
 
@@ -144,26 +148,17 @@
         .catch(() => window.location.href = 'login.html');
     }
 
-    /* ------ Eventos de navegación ------ */
-    empresaButton.addEventListener('click',       () => window.location.href = 'empresa/empresaMenu.html');
-    cuadresButton.addEventListener('click',       () => window.location.href = 'reportes/cuadres.html');
-    graficoVentasButton.addEventListener('click', () => window.location.href = 'reportes/graficoVentas.html');
-    reportesButton.addEventListener('click',      () => window.location.href = 'reportes/reportes.html');
-    rrhhButton.addEventListener('click',          () => window.location.href = 'rrhh/rrhh.html');
-    facturasButton.addEventListener('click',      () => window.location.href = 'facturas/facturas.html');
-    logoutButton.addEventListener('click', cerrarSesion);
-    window.onload = verificarUsuario;
-
-    /* ------ Sidebar toggler (móvil) ------ */
     document.getElementById('sidebarToggle').addEventListener('click', () => {
       document.querySelector('.sidebar').classList.toggle('nav-hidden');
       document.querySelector('.content').classList.toggle('expanded');
     });
 
-    function cerrarSesion() {
+    logoutButton.addEventListener('click', () => {
       localStorage.removeItem('usuarioLogueado');
       window.location.href = 'login.html';
-    }
+    });
+
+    window.onload = verificarUsuario;
   </script>
 
   <!-- Bootstrap bundle -->
